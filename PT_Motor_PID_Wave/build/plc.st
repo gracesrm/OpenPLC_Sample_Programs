@@ -1,0 +1,416 @@
+TYPE
+  LOGLEVEL : (CRITICAL, WARNING, INFO, DEBUG) := INFO;
+END_TYPE
+
+FUNCTION_BLOCK LOGGER
+  VAR_INPUT
+    TRIG : BOOL;
+    MSG : STRING;
+    LEVEL : LOGLEVEL := INFO;
+  END_VAR
+  VAR
+    TRIG0 : BOOL;
+  END_VAR
+
+  IF TRIG AND NOT TRIG0 THEN
+  {{
+   LogMessage(GetFbVar(LEVEL),(char*)GetFbVar(MSG, .body),GetFbVar(MSG, .len));
+  }}
+  END_IF;
+  TRIG0:=TRIG;
+END_FUNCTION_BLOCK
+
+
+
+FUNCTION_BLOCK python_eval
+  VAR_INPUT
+    TRIG : BOOL;
+    CODE : STRING;
+  END_VAR
+  VAR_OUTPUT
+    ACK : BOOL;
+    RESULT : STRING;
+  END_VAR
+  VAR
+    STATE : DWORD;
+    BUFFER : STRING;
+    PREBUFFER : STRING;
+    TRIGM1 : BOOL;
+    TRIGGED : BOOL;
+  END_VAR
+
+  {extern void __PythonEvalFB(int, PYTHON_EVAL*);__PythonEvalFB(0, data__);}
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK python_poll
+  VAR_INPUT
+    TRIG : BOOL;
+    CODE : STRING;
+  END_VAR
+  VAR_OUTPUT
+    ACK : BOOL;
+    RESULT : STRING;
+  END_VAR
+  VAR
+    STATE : DWORD;
+    BUFFER : STRING;
+    PREBUFFER : STRING;
+    TRIGM1 : BOOL;
+    TRIGGED : BOOL;
+  END_VAR
+
+  {extern void __PythonEvalFB(int, PYTHON_EVAL*);__PythonEvalFB(1,(PYTHON_EVAL*)(void*)data__);}
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK python_gear
+  VAR_INPUT
+    N : UINT;
+    TRIG : BOOL;
+    CODE : STRING;
+  END_VAR
+  VAR_OUTPUT
+    ACK : BOOL;
+    RESULT : STRING;
+  END_VAR
+  VAR
+    py_eval : python_eval;
+    COUNTER : UINT;
+    ADD10_OUT : UINT;
+    EQ13_OUT : BOOL;
+    SEL15_OUT : UINT;
+    AND7_OUT : BOOL;
+  END_VAR
+
+  ADD10_OUT := ADD(COUNTER, 1);
+  EQ13_OUT := EQ(N, ADD10_OUT);
+  SEL15_OUT := SEL(EQ13_OUT, ADD10_OUT, 0);
+  COUNTER := SEL15_OUT;
+  AND7_OUT := AND(EQ13_OUT, TRIG);
+  py_eval(TRIG := AND7_OUT, CODE := CODE);
+  ACK := py_eval.ACK;
+  RESULT := py_eval.RESULT;
+END_FUNCTION_BLOCK
+
+
+FUNCTION_BLOCK Hysterese2
+  VAR_INPUT
+    IN : WORD;
+    Low : WORD;
+    High : WORD;
+  END_VAR
+  VAR_OUTPUT
+    Out : BOOL;
+  END_VAR
+
+  IF in < low THEN
+  	Out := FALSE;
+  ELSIF in > high THEN
+  	Out := TRUE;
+  END_IF;
+
+
+
+
+  (* revision history
+  hm		4.  aug. 2006	rev 1.0
+  	original version
+
+  hm		2. jun. 2008	rev 1.1
+  	improved performance
+  *)
+END_FUNCTION_BLOCK
+
+PROGRAM program0
+  VAR
+    Hysterese20 : Hysterese2;
+  END_VAR
+
+  Hysterese20();
+END_PROGRAM
+
+FUNCTION_BLOCK Two_Steps_Burner_PID
+  VAR_INPUT
+    Start : BOOL;
+    T_Set : REAL;
+    T_act : REAL;
+  END_VAR
+  VAR
+    XO : REAL := 0.0;
+    KP : REAL;
+    TR : REAL;
+    TD : REAL;
+    Cycle : TIME := T#1s;
+  END_VAR
+  VAR_OUTPUT
+    Burner_on : BOOL;
+    Level_1 : BOOL;
+    Level_2 : BOOL;
+  END_VAR
+  VAR
+    PID0 : PID;
+    L_Min : WORD := 0;
+    L_Max : WORD := 1000;
+    Hysterese20 : Hysterese2;
+    Hysterese21 : Hysterese2;
+    Low_ST1 : WORD := 450;
+    High_ST1 : WORD := 500;
+    Low_ST2 : WORD := 650;
+    High_ST2 : WORD := 700;
+    REAL_TO_WORD11_OUT : WORD;
+    LIMIT10_OUT : WORD;
+    NOT22_OUT : BOOL;
+    AND20_OUT : BOOL;
+  END_VAR
+
+  Burner_on := Start;
+  PID0(AUTO := Start, PV := T_act, SP := T_Set, X0 := XO, KP := KP, TR := TR, TD := TD, CYCLE := Cycle);
+  REAL_TO_WORD11_OUT := REAL_TO_WORD(PID0.XOUT);
+  LIMIT10_OUT := LIMIT(L_Min, REAL_TO_WORD11_OUT, L_Max);
+  Hysterese20(IN := LIMIT10_OUT, Low := Low_ST1, High := High_ST1);
+  Hysterese21(IN := LIMIT10_OUT, Low := Low_ST2, High := High_ST2);
+  NOT22_OUT := NOT(Hysterese21.Out);
+  AND20_OUT := AND(Hysterese20.Out, NOT22_OUT);
+  Level_1 := AND20_OUT;
+  Level_2 := Hysterese21.Out;
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK PT_Calc
+  VAR_INPUT
+    Rtd : REAL;
+    R_0_Grad : REAL;
+  END_VAR
+  VAR
+    R_0_Norm : REAL;
+  END_VAR
+  VAR_INPUT
+    R_Ref : REAL;
+  END_VAR
+  VAR_OUTPUT
+    Ratio : REAL;
+    R_Ist : REAL;
+  END_VAR
+  VAR CONSTANT
+    K_32768 : REAL := 32768.0;
+    a : REAL := 3.9083E-03;
+    b : REAL := -5.7750E-07;
+    c : REAL := -4.1830E-12;
+    K_2 : REAL := 2.0;
+    K_3 : REAL := 3.0;
+    K_4 : REAL := 4.0;
+    K_5 : REAL := 5.0;
+    K_100 : REAL := 100.0;
+    K_min1 : REAL := -1.0;
+  END_VAR
+  VAR_OUTPUT
+    Temp : REAL;
+  END_VAR
+  VAR CONSTANT
+    K_a_kl0 : REAL := 2.2228;
+    K_b_kl0 : REAL := 2.5859E-3;
+    K_c_kl0 : REAL := 4.8260E-6;
+    K_d_kl0 : REAL := 2.8183E-8;
+    K_e_kl0 : REAL := 1.5243E-10;
+    K_242_02 : REAL := 242.02;
+  END_VAR
+  VAR
+    DIV3_OUT : REAL;
+    MUL8_OUT : REAL;
+    DIV41_OUT : REAL;
+    MUL42_OUT : REAL;
+    GE78_OUT : BOOL;
+    MUL29_OUT : REAL;
+    MUL30_OUT : REAL;
+    EXPT22_OUT : REAL;
+    EXPT19_OUT : REAL;
+    MUL12_OUT : REAL;
+    SUB11_OUT : REAL;
+    MUL13_OUT : REAL;
+    MUL15_OUT : REAL;
+    MUL16_OUT : REAL;
+    SUB25_OUT : REAL;
+    SQRT26_OUT : REAL;
+    ADD32_OUT : REAL;
+    MUL34_OUT : REAL;
+    MUL33_OUT : REAL;
+    DIV38_OUT : REAL;
+    MOVE74_ENO : BOOL;
+    MOVE74_OUT : REAL;
+    NOT81_OUT : BOOL;
+    EXPT46_OUT : REAL;
+    MUL49_OUT : REAL;
+    EXPT50_OUT : REAL;
+    MUL54_OUT : REAL;
+    SUB55_OUT : REAL;
+    EXPT57_OUT : REAL;
+    MUL61_OUT : REAL;
+    SUB56_OUT : REAL;
+    EXPT62_OUT : REAL;
+    MUL66_OUT : REAL;
+    ADD67_OUT : REAL;
+    MUL72_OUT : REAL;
+    ADD68_OUT : REAL;
+    SUB69_OUT : REAL;
+    MOVE79_ENO : BOOL;
+    MOVE79_OUT : REAL;
+  END_VAR
+
+  DIV3_OUT := DIV(Rtd, K_32768);
+  Ratio := DIV3_OUT;
+  MUL8_OUT := MUL(Ratio, R_Ref);
+  R_Ist := MUL8_OUT;
+  DIV41_OUT := DIV(R_Ist, R_0_Grad);
+  MUL42_OUT := MUL(DIV41_OUT, K_100);
+  R_0_Norm := MUL42_OUT;
+  GE78_OUT := GE(R_0_Norm, K_100);
+  MUL29_OUT := MUL(R_0_Grad, K_min1);
+  MUL30_OUT := MUL(a, MUL29_OUT);
+  EXPT22_OUT := EXPT(a, K_2);
+  EXPT19_OUT := EXPT(R_0_Grad, K_2);
+  MUL12_OUT := MUL(EXPT22_OUT, EXPT19_OUT);
+  SUB11_OUT := SUB(R_0_Grad, R_Ist);
+  MUL13_OUT := MUL(SUB11_OUT, b);
+  MUL15_OUT := MUL(MUL13_OUT, R_0_Grad);
+  MUL16_OUT := MUL(MUL15_OUT, K_4);
+  SUB25_OUT := SUB(MUL12_OUT, MUL16_OUT);
+  SQRT26_OUT := SQRT(SUB25_OUT);
+  ADD32_OUT := ADD(MUL30_OUT, SQRT26_OUT);
+  MUL34_OUT := MUL(R_0_Grad, K_2);
+  MUL33_OUT := MUL(b, MUL34_OUT);
+  DIV38_OUT := DIV(ADD32_OUT, MUL33_OUT);
+  MOVE74_OUT := MOVE(EN := GE78_OUT, IN := DIV38_OUT, ENO => MOVE74_ENO);
+  IF MOVE74_ENO THEN
+      Temp := MOVE74_OUT;
+  END_IF;
+  NOT81_OUT := NOT(GE78_OUT);
+  EXPT46_OUT := EXPT(R_0_Norm, K_5);
+  MUL49_OUT := MUL(EXPT46_OUT, K_e_kl0);
+  EXPT50_OUT := EXPT(R_0_Norm, K_4);
+  MUL54_OUT := MUL(EXPT50_OUT, K_d_kl0);
+  SUB55_OUT := SUB(MUL49_OUT, MUL54_OUT);
+  EXPT57_OUT := EXPT(R_0_Norm, K_3);
+  MUL61_OUT := MUL(EXPT57_OUT, K_c_kl0);
+  SUB56_OUT := SUB(SUB55_OUT, MUL61_OUT);
+  EXPT62_OUT := EXPT(R_0_Norm, K_2);
+  MUL66_OUT := MUL(EXPT62_OUT, K_b_kl0);
+  ADD67_OUT := ADD(SUB56_OUT, MUL66_OUT);
+  MUL72_OUT := MUL(R_0_Norm, K_a_kl0);
+  ADD68_OUT := ADD(ADD67_OUT, MUL72_OUT);
+  SUB69_OUT := SUB(ADD68_OUT, K_242_02);
+  MOVE79_OUT := MOVE(EN := NOT81_OUT, IN := SUB69_OUT, ENO => MOVE79_ENO);
+  IF MOVE79_ENO THEN
+      Temp := MOVE79_OUT;
+  END_IF;
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK Well_pak_steu
+  VAR
+    TP0 : TP;
+    RS0 : RS;
+    F_TRIG0 : F_TRIG;
+    F_TRIG1 : F_TRIG;
+    Summe : INT;
+    K_100 : INT := 100;
+  END_VAR
+  VAR_OUTPUT
+    SSR : BOOL;
+  END_VAR
+  VAR_INPUT
+    Start : BOOL := False;
+  END_VAR
+  VAR
+    K_T_02 : TIME := T#20ms;
+  END_VAR
+  VAR_INPUT
+    Percent_Power : INT := 0;
+  END_VAR
+  VAR
+    GE8_OUT : BOOL;
+    ADD35_ENO : BOOL;
+    ADD35_OUT : INT;
+    AND38_OUT : BOOL;
+    SUB11_ENO : BOOL;
+    SUB11_OUT : INT;
+  END_VAR
+
+  GE8_OUT := GE(Summe, K_100);
+  SSR := GE8_OUT;
+  F_TRIG0(CLK := TP0.Q);
+  RS0(S := Start, R1 := F_TRIG0.Q);
+  TP0(IN := RS0.Q1, PT := K_T_02);
+  F_TRIG1(CLK := TP0.Q);
+  ADD35_OUT := ADD(EN := F_TRIG1.Q, IN1 := Summe, IN2 := Percent_Power, ENO => ADD35_ENO);
+  IF ADD35_ENO THEN
+      Summe := ADD35_OUT;
+  END_IF;
+  AND38_OUT := AND(GE8_OUT, F_TRIG1.Q);
+  SUB11_OUT := SUB(EN := AND38_OUT, IN1 := Summe, IN2 := K_100, ENO => SUB11_ENO);
+  IF SUB11_ENO THEN
+      Summe := SUB11_OUT;
+  END_IF;
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK Analog_IN_Realtemp_OUT
+  VAR
+    Res_IN : WORD := 1023;
+    PT_Range : WORD := 150;
+  END_VAR
+  VAR_INPUT
+    MW_act : WORD;
+  END_VAR
+  VAR_OUTPUT
+    MW_Ist0 : REAL;
+  END_VAR
+  VAR
+    WORD_TO_REAL8_OUT : REAL;
+    WORD_TO_REAL2_OUT : REAL;
+    WORD_TO_REAL3_OUT : REAL;
+    DIV1_OUT : REAL;
+    DIV6_OUT : REAL;
+  END_VAR
+
+  WORD_TO_REAL8_OUT := WORD_TO_REAL(MW_act);
+  WORD_TO_REAL2_OUT := WORD_TO_REAL(Res_IN);
+  WORD_TO_REAL3_OUT := WORD_TO_REAL(PT_Range);
+  DIV1_OUT := DIV(WORD_TO_REAL2_OUT, WORD_TO_REAL3_OUT);
+  DIV6_OUT := DIV(WORD_TO_REAL8_OUT, DIV1_OUT);
+  MW_Ist0 := DIV6_OUT;
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK Rnd_any_DecPt
+  VAR_INPUT
+    IN_Real : REAL;
+  END_VAR
+  VAR_OUTPUT
+    Out_Real_rounded : REAL;
+  END_VAR
+  VAR_INPUT
+    Dec_Pt : INT;
+  END_VAR
+  VAR
+    INT_TO_REAL5_OUT : REAL;
+    MUL11_OUT : REAL;
+    EXP3_OUT : REAL;
+    MUL2_OUT : REAL;
+    REAL_TO_INT6_OUT : INT;
+    INT_TO_REAL7_OUT : REAL;
+    DIV8_OUT : REAL;
+  END_VAR
+
+  INT_TO_REAL5_OUT := INT_TO_REAL(Dec_Pt);
+  MUL11_OUT := MUL(2.30258509299405, INT_TO_REAL5_OUT);
+  EXP3_OUT := EXP(MUL11_OUT);
+  MUL2_OUT := MUL(IN_Real, EXP3_OUT);
+  REAL_TO_INT6_OUT := REAL_TO_INT(MUL2_OUT);
+  INT_TO_REAL7_OUT := INT_TO_REAL(REAL_TO_INT6_OUT);
+  DIV8_OUT := DIV(INT_TO_REAL7_OUT, EXP3_OUT);
+  Out_Real_rounded := DIV8_OUT;
+END_FUNCTION_BLOCK
+
+
+CONFIGURATION Config0
+
+  RESOURCE Res0 ON PLC
+    TASK task0(INTERVAL := T#20ms,PRIORITY := 0);
+    PROGRAM instance0 WITH task0 : program0;
+  END_RESOURCE
+END_CONFIGURATION
