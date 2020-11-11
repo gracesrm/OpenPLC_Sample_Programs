@@ -1,0 +1,189 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns:ns1="http://www.plcopen.org/xml/tc6.xsd" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <fileHeader companyName="Unknown" productName="Unnamed" productVersion="1" creationDateTime="2020-11-10T14:26:53"/>
+  <contentHeader name="Unnamed" modificationDateTime="2020-11-10T19:16:39">
+    <coordinateInfo>
+      <fbd>
+        <scaling x="10" y="10"/>
+      </fbd>
+      <ld>
+        <scaling x="10" y="10"/>
+      </ld>
+      <sfc>
+        <scaling x="10" y="10"/>
+      </sfc>
+    </coordinateInfo>
+  </contentHeader>
+  <types>
+    <dataTypes/>
+    <pous>
+      <pou name="Cell1" pouType="program">
+        <interface>
+          <externalVars>
+            <variable name="Update_Complete">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Part_Process">
+              <type>
+                <DWORD/>
+              </type>
+            </variable>
+          </externalVars>
+          <inputVars>
+            <variable name="Pallet_Sensor">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Part_Sensor">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="CNC_Part_Ready">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Robot_Ready">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Part_AtConveyor">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+          </inputVars>
+          <outputVars>
+            <variable name="Retract_Stopper">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Deliver_Part">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+          </outputVars>
+          <localVars>
+            <variable name="Pallet_Arrival">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Update_Part_Process">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+          </localVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml:p><![CDATA[Pallet_Arrival := False;
+Retract_Stopper := False;
+Deliver_Part := False;
+Update_Part_Process := False;
+
+IF Pallet_Sensor AND NOT(Part_Sensor) THEN
+    Pallet_Arrival := True;
+END_IF;
+
+IF Part_Sensor THEN
+    Retract_Stopper := True;
+END_IF;
+
+IF Pallet_Arrival AND CNC_Part_Ready AND Robot_Ready AND NOT(Part_AtConveyor) THEN
+    Deliver_Part := True;
+    Update_Part_Process := True;
+    CNC_Part_Ready := False;
+    Robot_Ready := False;
+END_IF;
+
+
+IF Update_Part_Process THEN
+    Part_Process := INT_TO_DWORD(2);
+END_IF;
+
+
+IF Update_Complete AND Part_AtConveyor THEN
+    Retract_Stopper := True;
+    Update_Complete := False;
+END_IF;]]></xhtml:p>
+          </ST>
+        </body>
+      </pou>
+      <pou name="UPDATE_PART" pouType="program">
+        <interface>
+          <externalVars>
+            <variable name="Update_Complete">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Part_Process">
+              <type>
+                <DWORD/>
+              </type>
+            </variable>
+          </externalVars>
+          <inputVars>
+            <variable name="RFID_IO_Complete">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+          </inputVars>
+          <localVars>
+            <variable name="IO_Timer">
+              <type>
+                <derived name="TON"/>
+              </type>
+            </variable>
+          </localVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml:p><![CDATA[(* Perform 15-step I/O operations on RFID *)
+IO_Timer(IN := NOT(Update_Complete), PT := DWORD_TO_TIME(Part_Process), Q => RFID_IO_Complete);
+
+IF RFID_IO_Complete THEN
+    Update_Complete := True;
+END_IF;]]></xhtml:p>
+          </ST>
+        </body>
+      </pou>
+    </pous>
+  </types>
+  <instances>
+    <configurations>
+      <configuration name="Config0">
+        <resource name="Res0">
+          <task name="task0" priority="0" interval="T#100ms">
+            <pouInstance name="instance0" typeName="Cell1"/>
+          </task>
+          <task name="task1" priority="0" interval="T#100ms">
+            <pouInstance name="instance1" typeName="UPDATE_PART"/>
+          </task>
+          <globalVars>
+            <variable name="Update_Complete">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Part_Process" address="%ML50">
+              <type>
+                <DWORD/>
+              </type>
+            </variable>
+          </globalVars>
+        </resource>
+      </configuration>
+    </configurations>
+  </instances>
+</project>

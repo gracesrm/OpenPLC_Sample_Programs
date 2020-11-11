@@ -1,0 +1,162 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns:ns1="http://www.plcopen.org/xml/tc6.xsd" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <fileHeader companyName="Unknown" productName="Unnamed" productVersion="1" creationDateTime="2020-10-11T14:15:17"/>
+  <contentHeader name="Gate_Controller" modificationDateTime="2020-10-12T07:25:56">
+    <coordinateInfo>
+      <fbd>
+        <scaling x="10" y="10"/>
+      </fbd>
+      <ld>
+        <scaling x="10" y="10"/>
+      </ld>
+      <sfc>
+        <scaling x="10" y="10"/>
+      </sfc>
+    </coordinateInfo>
+  </contentHeader>
+  <types>
+    <dataTypes/>
+    <pous>
+      <pou name="Gate_Controller" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="Start_Loop">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+            </variable>
+            <variable name="one_hour">
+              <type>
+                <TIME/>
+              </type>
+              <initialValue>
+                <simpleValue value="T#1h"/>
+              </initialValue>
+            </variable>
+            <variable name="One_Hour_Timer">
+              <type>
+                <derived name="TON"/>
+              </type>
+            </variable>
+            <variable name="Gate_Open">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[The state of gate: open or close]]></xhtml:p>
+              </documentation>
+            </variable>
+          </localVars>
+          <outputVars>
+            <variable name="Close_Gate_Inst">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+            </variable>
+          </outputVars>
+          <inputVars>
+            <variable name="Sensed_Car">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+            </variable>
+            <variable name="Sensed_Car_Inst">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+            </variable>
+            <variable name="Sensed_App">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+            </variable>
+            <variable name="Mobile_Inst">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="False"/>
+              </initialValue>
+            </variable>
+            <variable name="Auth">
+              <type>
+                <string/>
+              </type>
+            </variable>
+          </inputVars>
+          <localVars>
+            <variable name="my_defined_str">
+              <type>
+                <string/>
+              </type>
+              <initialValue>
+                <simpleValue value="&quot;1234&quot;"/>
+              </initialValue>
+            </variable>
+          </localVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml:p><![CDATA[One_Hour_Timer(IN := NOT(Start_Loop), PT := one_hour);
+
+IF One_Hour_Timer.Q THEN
+  IF Gate_Open THEN
+    Close_Gate_Inst := True;
+    Gate_Open := False;
+  END_IF;
+END_IF;
+
+IF Sensed_App THEN
+  (* How can I do some authentication here? *)
+  IF EQ(Auth, my_defined_str) THEN
+    Close_Gate_Inst := XOR(Mobile_Inst, Gate_Open);
+    Gate_Open := Mobile_Inst;
+  END_IF;
+END_IF;
+
+IF Sensed_Car THEN
+  (* How can I do some authentication here? *)
+  IF EQ(Auth, my_defined_str) THEN
+    Close_Gate_Inst := XOR(Sensed_Car_Inst, Gate_Open);
+    Gate_Open := Sensed_Car_Inst;
+  END_IF;
+END_IF;
+
+
+Start_Loop := One_Hour_Timer.Q;
+]]></xhtml:p>
+          </ST>
+        </body>
+      </pou>
+    </pous>
+  </types>
+  <instances>
+    <configurations>
+      <configuration name="Config0">
+        <resource name="Res0">
+          <task name="task0" priority="0" interval="T#20ms">
+            <pouInstance name="instance0" typeName="Gate_Controller"/>
+          </task>
+        </resource>
+      </configuration>
+    </configurations>
+  </instances>
+</project>
