@@ -1,0 +1,27 @@
+FUNCTION FuncAdd : REAL
+VAR_INPUT
+  a: REAL;
+  b: REAL;
+END_VAR
+
+
+FuncAdd := INT_TO_REAL(2)*a - INT_TO_REAL(22)*b;
+END_FUNCTION
+
+
+PROGRAM my_sth
+VAR_INPUT
+  Var1 : REAL := REAL#2.0;
+  x : REAL := REAL#7.0;
+  y : REAL := REAL#8.0;
+END_VAR
+
+Var1 := FuncAdd(x, y);
+END_PROGRAM
+
+CONFIGURATION Config0
+  RESOURCE Res0 ON PLC
+    TASK task0(INTERVAL := T#50ms, PRIORITY := 0);
+    PROGRAM instance0 WITH task0 : my_sth;
+  END_RESOURCE
+END_CONFIGURATION

@@ -1,0 +1,273 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.plcopen.org/xml/tc6_0201" xmlns:xhtml="http://www.w3.org/1999/xhtml" xsi:schemaLocation="http://www.plcopen.org/xml/tc6_0201">
+  <fileHeader companyName="Blank" productName="Blank" productVersion="1.0" creationDateTime="2016-05-18T21:14:07"/>
+  <contentHeader name="Blank Project" modificationDateTime="2020-09-04T17:37:59">
+    <coordinateInfo>
+      <fbd>
+        <scaling x="10" y="10"/>
+      </fbd>
+      <ld>
+        <scaling x="10" y="10"/>
+      </ld>
+      <sfc>
+        <scaling x="10" y="10"/>
+      </sfc>
+    </coordinateInfo>
+  </contentHeader>
+  <types>
+    <dataTypes/>
+    <pous>
+      <pou name="ADC2Celsius" pouType="functionBlock">
+        <interface>
+          <inputVars>
+            <variable name="A0">
+              <type>
+                <UINT/>
+              </type>
+              <documentation>
+                <xhtml:p><![CDATA[ADC input]]></xhtml:p>
+              </documentation>
+            </variable>
+          </inputVars>
+          <localVars>
+            <variable name="ADC">
+              <type>
+                <REAL/>
+              </type>
+            </variable>
+            <variable name="Offset">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="2240.0"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[here 35008 - 32768 ]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="Rntc">
+              <type>
+                <REAL/>
+              </type>
+              <documentation>
+                <xhtml:p><![CDATA[NTC resistance]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="Rseries">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="9970.0"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[seriesresistor]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="ADCmax">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="65535.0"/>
+              </initialValue>
+            </variable>
+            <variable name="Stein">
+              <type>
+                <REAL/>
+              </type>
+              <documentation>
+                <xhtml:p><![CDATA[1/T]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="T0">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="298.15"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[NTC 25°C in Kelvin]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="B">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="4050.0"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[NTC B-value]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="R0">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="10000.0"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[NTC-resistance at T0]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="Temp">
+              <type>
+                <REAL/>
+              </type>
+              <documentation>
+                <xhtml:p><![CDATA[Temperature in Kelvin]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="Tk">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="273.15"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[0°C in Kelvin]]></xhtml:p>
+              </documentation>
+            </variable>
+            <variable name="Tcal">
+              <type>
+                <REAL/>
+              </type>
+              <initialValue>
+                <simpleValue value="0.0"/>
+              </initialValue>
+              <documentation>
+                <xhtml:p><![CDATA[Offset Calibration Temp, z.B. 3.2]]></xhtml:p>
+              </documentation>
+            </variable>
+          </localVars>
+          <outputVars>
+            <variable name="Tc">
+              <type>
+                <INT/>
+              </type>
+            </variable>
+          </outputVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml:p><![CDATA[(* ADC to Celsius with voltage divider 10k and NTC 10k at esp8266 *)
+
+(* Conversion *)
+ADC := UINT_TO_REAL(A0);
+
+(* NTC Resistance *)
+Rntc := Rseries / ((ADCmax / (ADC - Offset)) - 1.0);
+
+(* Steinhart Equation *)
+Stein := (1.0 / T0) + (1.0 / B) * LN((Rntc / R0));
+
+(* Temperature in Kelvin *)
+Temp := (1.0 / Stein);
+
+(* Temperature in Celsius *)
+Temp := (Temp - Tk);
+
+(* Offset Calibration *)
+Temp := (Temp + Tcal);
+
+(* To preserve 2 decimals after REAL_TO_INT*)
+Temp := (Temp * 100.0);
+
+(* Conversion *)
+Tc := REAL_TO_INT(Temp);
+]]></xhtml:p>
+          </ST>
+        </body>
+      </pou>
+      <pou name="program0" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="A0" address="%IW100">
+              <type>
+                <UINT/>
+              </type>
+            </variable>
+            <variable name="Tc" address="%QW100">
+              <type>
+                <INT/>
+              </type>
+            </variable>
+          </localVars>
+          <localVars>
+            <variable name="ADC2Celsius0">
+              <type>
+                <derived name="ADC2Celsius"/>
+              </type>
+            </variable>
+          </localVars>
+        </interface>
+        <body>
+          <LD>
+            <comment localId="1" height="40" width="690">
+              <position x="40" y="40"/>
+              <content>
+                <xhtml:p><![CDATA[Temperature Conversion]]></xhtml:p>
+              </content>
+            </comment>
+            <inVariable localId="2" height="30" width="30" negated="false">
+              <position x="70" y="160"/>
+              <connectionPointOut>
+                <relPosition x="30" y="20"/>
+              </connectionPointOut>
+              <expression>A0</expression>
+            </inVariable>
+            <block localId="3" typeName="ADC2Celsius" instanceName="ADC2Celsius0" height="40" width="100">
+              <position x="240" y="150"/>
+              <inputVariables>
+                <variable formalParameter="A0">
+                  <connectionPointIn>
+                    <relPosition x="0" y="30"/>
+                    <connection refLocalId="2">
+                      <position x="240" y="180"/>
+                      <position x="100" y="180"/>
+                    </connection>
+                  </connectionPointIn>
+                </variable>
+              </inputVariables>
+              <inOutVariables/>
+              <outputVariables>
+                <variable formalParameter="Tc">
+                  <connectionPointOut>
+                    <relPosition x="100" y="30"/>
+                  </connectionPointOut>
+                </variable>
+              </outputVariables>
+            </block>
+            <outVariable localId="4" height="30" width="30" negated="false">
+              <position x="470" y="160"/>
+              <connectionPointIn>
+                <relPosition x="0" y="20"/>
+                <connection refLocalId="3" formalParameter="Tc">
+                  <position x="470" y="180"/>
+                  <position x="340" y="180"/>
+                </connection>
+              </connectionPointIn>
+              <expression>Tc</expression>
+            </outVariable>
+          </LD>
+        </body>
+      </pou>
+    </pous>
+  </types>
+  <instances>
+    <configurations>
+      <configuration name="Config0">
+        <resource name="Res0">
+          <task name="TaskMain" priority="0" interval="T#250ms">
+            <pouInstance name="Inst0" typeName="program0"/>
+          </task>
+        </resource>
+      </configuration>
+    </configurations>
+  </instances>
+</project>

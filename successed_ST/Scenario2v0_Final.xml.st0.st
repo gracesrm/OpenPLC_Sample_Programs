@@ -1,0 +1,689 @@
+TYPE
+    MAGAZIN_STATES_T : (GREEN_LAMP , INIT , INTERSTEP , MAGAZIN_INIT , MAGAZIN_INIT_2 , SLIDER_MOVE_BACK , START_MAGAZIN , STEP0 , STEP1 , CONVEY);
+    CRANE_STATES_T : (CRANE_INIT , CRANE_INIT_2 , CRANE_LIFT_CONVEYOR , CRANE_ON_CONVEYOR , CRANE_ON_CONVEYOR_METALLIC , CRANE_STOP , CRANE_TURN_LEFT_METALLIC , CRANE_TURN_LEFT_NOT_METALLIC , INIT , INTERSTEP , INTERSTEP_2 , INTERSTEP_CHECK_WORKPIECE , MAGAZIN_STOP , START_CRANE , STEP0 , TIMEDELAY , TURN_RIGHT , RELEASE);
+END_TYPE
+
+PROGRAM MAIN
+
+VAR  ACTUATOR_CRANELOWER : BOOL; END_VAR 
+VAR  ACTUATOR_CRANETURNCLOCKWISE : BOOL; END_VAR 
+VAR  ACTUATOR_CRANETURNCOUNTERCLOCKWISE : BOOL; END_VAR 
+VAR  ACTUATOR_MAGAZINGREENLAMP : BOOL; END_VAR 
+VAR  ACTUATOR_MAGAZINSLIDER : BOOL; END_VAR 
+VAR  ACTUATOR_MAGAZINVACUUMOFF : BOOL; END_VAR 
+VAR  ACTUATOR_MAGAZINVACUUMON : BOOL; END_VAR 
+VAR  ACTUATOR_MAGAZINWHITELAMP : BOOL; END_VAR 
+VAR_INPUT  CRANE_CRANEDOWN : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_CRANELOWER : BOOL; END_VAR 
+VAR_INPUT  CRANE_CRANEONCONVEYOR : BOOL; END_VAR 
+VAR_INPUT  CRANE_CRANEONMAGAZIN : BOOL; END_VAR 
+VAR_INPUT  CRANE_CRANESUCKED : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_CRANETURNCLOCKWISE : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_CRANETURNCOUNTERCLOCKWISE : BOOL; END_VAR 
+VAR_INPUT  CRANE_CRANEUP : BOOL; END_VAR 
+VAR_INPUT  CRANE_MAGAZINCAPACITIVESENSOR : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_MAGAZINVACUUMOFF : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_MAGAZINVACUUMON : BOOL; END_VAR 
+VAR  CRANE_SFCINIT : BOOL; END_VAR 
+VAR_INPUT  CRANE_SFCRESET : BOOL; END_VAR 
+VAR_INPUT  CRANE_SLIDERMOVEDOUT : BOOL; END_VAR 
+VAR_INPUT  CRANE_SLIDERNOTMOVEDOUT : BOOL; END_VAR 
+VAR_INPUT  CRANE_STARTBUTTONMAGAZIN : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_STARTCOMMANDCRANE : BOOL; END_VAR 
+VAR_INPUT  CRANE_STARTVAR : BOOL; END_VAR 
+VAR_OUTPUT  CRANE_TIMEDELAY_TIMER_ET : UINT; END_VAR 
+VAR_INPUT  CRANE_TIMEDELAY_TIMER_IN : BOOL; END_VAR 
+VAR_INPUT  CRANE_TIMEDELAY_TIMER_PT : UINT; END_VAR 
+VAR_OUTPUT  CRANE_TIMEDELAY_TIMER_Q : BOOL; END_VAR 
+VAR  CRANE_TIMEDELAY_TIMER_DURATION : UINT := UINT#12; END_VAR 
+VAR  CRANE_TIMEDELAY_TIMER_INTERCONNECT : BOOL; END_VAR 
+VAR_INPUT  CRANE_WORKPIECEREADY : BOOL; END_VAR 
+VAR  CRANE_2STATE : CRANE_STATES_T; END_VAR 
+VAR  CRANE_2TRANSIT : BOOL; END_VAR 
+VAR  CRANE_INTERCONNECTCRANESTARTCOMMAND : BOOL; END_VAR 
+VAR_INPUT  MAG_CRANEDOWN : BOOL; END_VAR 
+VAR_OUTPUT  MAG_CRANELOWER : BOOL; END_VAR 
+VAR_INPUT  MAG_CRANEONCONVEYOR : BOOL; END_VAR 
+VAR_INPUT  MAG_CRANEONMAGAZIN : BOOL; END_VAR 
+VAR_INPUT  MAG_CRANESUCKED : BOOL; END_VAR 
+VAR_OUTPUT  MAG_CRANETURNCLOCKWISE : BOOL; END_VAR 
+VAR_OUTPUT  MAG_CRANETURNCOUNTERCLOCKWISE : BOOL; END_VAR 
+VAR_INPUT  MAG_CRANEUP : BOOL; END_VAR 
+VAR_OUTPUT  MAG_MAGAZINGREENLAMP : BOOL; END_VAR 
+VAR_OUTPUT  MAG_MAGAZINSLIDER : BOOL; END_VAR 
+VAR_OUTPUT  MAG_MAGAZINVACUUMOFF : BOOL; END_VAR 
+VAR_OUTPUT  MAG_MAGAZINVACUUMON : BOOL; END_VAR 
+VAR_OUTPUT  MAG_MAGAZINWHITELAMP : BOOL; END_VAR 
+VAR  MAG_SFCINIT : BOOL; END_VAR 
+VAR_INPUT  MAG_SFCRESET : BOOL; END_VAR 
+VAR_INPUT  MAG_SLIDERMOVEDOUT : BOOL; END_VAR 
+VAR_INPUT  MAG_SLIDERNOTMOVEDOUT : BOOL; END_VAR 
+VAR_INPUT  MAG_STARTBUTTONMAGAZIN : BOOL; END_VAR 
+VAR_OUTPUT  MAG_STARTCOMMANDMAGAZIN : BOOL; END_VAR 
+VAR_INPUT  MAG_STARTVAR : BOOL; END_VAR 
+VAR_INPUT  MAG_WORKPIECEREADY : BOOL; END_VAR 
+VAR  MAG_2STATE : MAGAZIN_STATES_T; END_VAR 
+VAR  MAG_2TRANSIT : BOOL; END_VAR 
+VAR  MAG_INTERCONNECTMAGAZINSTARTCOMMAND : BOOL; END_VAR 
+VAR  SENSOR_CRANEDOWN : BOOL; END_VAR 
+VAR  SENSOR_CRANEONCONVEYOR : BOOL; END_VAR 
+VAR  SENSOR_CRANEONMAGAZIN : BOOL; END_VAR 
+VAR  SENSOR_CRANEPOSITION : BOOL; END_VAR 
+VAR  SENSOR_CRANEPOSITIONSTAMP : BOOL; END_VAR 
+VAR  SENSOR_CRANESUCKED : BOOL; END_VAR 
+VAR  SENSOR_CRANEUP : BOOL; END_VAR 
+VAR  SENSOR_MAGAZINCAPACITIVESENSOR : BOOL; END_VAR 
+VAR  SENSOR_MAGAZINEMERGENCYSTOP : BOOL; END_VAR 
+VAR  SENSOR_MAGAZINOPTICALSENSOR : BOOL; END_VAR 
+VAR  SENSOR_MAGAZINSWITCHMANUELLAUTOMATIC : BOOL; END_VAR 
+VAR  SENSOR_SLIDERMOVEDOUT : BOOL; END_VAR 
+VAR  SENSOR_SLIDERNOTMOVEDOUT : BOOL; END_VAR 
+VAR  SENSOR_STARTBUTTONMAGAZIN : BOOL; END_VAR 
+VAR  SENSOR_WORKPIECEREADY : BOOL; END_VAR 
+MAG_SLIDERNOTMOVEDOUT := SENSOR_SLIDERNOTMOVEDOUT;
+MAG_SLIDERMOVEDOUT := SENSOR_SLIDERMOVEDOUT;
+MAG_CRANEONMAGAZIN := SENSOR_CRANEONMAGAZIN;
+MAG_CRANEDOWN := SENSOR_CRANEDOWN;
+MAG_CRANEUP := SENSOR_CRANEUP;
+MAG_CRANEONCONVEYOR := SENSOR_CRANEONCONVEYOR;
+MAG_WORKPIECEREADY := SENSOR_WORKPIECEREADY;
+MAG_STARTBUTTONMAGAZIN := SENSOR_STARTBUTTONMAGAZIN;
+ACTUATOR_MAGAZINSLIDER := MAG_MAGAZINSLIDER;
+ACTUATOR_MAGAZINGREENLAMP := MAG_MAGAZINGREENLAMP;
+CRANE_WORKPIECEREADY := SENSOR_WORKPIECEREADY;
+CRANE_CRANEUP := SENSOR_CRANEUP;
+CRANE_CRANEONCONVEYOR := SENSOR_CRANEONCONVEYOR;
+CRANE_CRANEDOWN := SENSOR_CRANEDOWN;
+CRANE_CRANESUCKED := SENSOR_CRANESUCKED;
+CRANE_CRANEONMAGAZIN := SENSOR_CRANEONMAGAZIN;
+CRANE_MAGAZINCAPACITIVESENSOR := SENSOR_MAGAZINCAPACITIVESENSOR;
+CRANE_SLIDERMOVEDOUT := SENSOR_SLIDERMOVEDOUT;
+CRANE_STARTBUTTONMAGAZIN := SENSOR_STARTBUTTONMAGAZIN;
+ACTUATOR_CRANETURNCOUNTERCLOCKWISE := CRANE_CRANETURNCOUNTERCLOCKWISE;
+ACTUATOR_CRANETURNCLOCKWISE := CRANE_CRANETURNCLOCKWISE;
+ACTUATOR_CRANELOWER := CRANE_CRANELOWER;
+ACTUATOR_MAGAZINVACUUMOFF := CRANE_MAGAZINVACUUMOFF;
+ACTUATOR_MAGAZINVACUUMON := CRANE_MAGAZINVACUUMON;
+IF SENSOR_MAGAZINEMERGENCYSTOP THEN
+    CASE MAG_2STATE OF 
+        MAGAZIN_STATES_T#GREEN_LAMP:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            MAG_MAGAZINGREENLAMP := TRUE;
+            MAG_INTERCONNECTMAGAZINSTARTCOMMAND := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#MAGAZIN_INIT;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#INIT:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#START_MAGAZIN;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#INTERSTEP:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            MAG_STARTCOMMANDMAGAZIN := TRUE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF MAG_STARTVAR THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#CONVEY;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#MAGAZIN_INIT:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            MAG_MAGAZINSLIDER := TRUE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#MAGAZIN_INIT_2;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#MAGAZIN_INIT_2:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            MAG_MAGAZINSLIDER := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#INTERSTEP;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#SLIDER_MOVE_BACK:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            IF ((MAG_SLIDERMOVEDOUT = TRUE) AND (MAG_SLIDERNOTMOVEDOUT = FALSE)) THEN
+                MAG_MAGAZINSLIDER := FALSE;
+            END_IF;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF MAG_CRANEUP THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#STEP1;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#START_MAGAZIN:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            MAG_MAGAZINSLIDER := FALSE;
+            MAG_MAGAZINGREENLAMP := FALSE;
+            MAG_STARTVAR := FALSE;
+            MAG_STARTCOMMANDMAGAZIN := FALSE;
+            IF (MAG_STARTBUTTONMAGAZIN = TRUE) THEN
+                MAG_INTERCONNECTMAGAZINSTARTCOMMAND := TRUE;
+            END_IF;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF MAG_INTERCONNECTMAGAZINSTARTCOMMAND THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#GREEN_LAMP;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#STEP0:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF MAG_CRANEDOWN THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#SLIDER_MOVE_BACK;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#STEP1:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF MAG_CRANEONCONVEYOR THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#INTERSTEP;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        MAGAZIN_STATES_T#CONVEY:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            MAG_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            IF MAG_SLIDERNOTMOVEDOUT THEN
+                MAG_MAGAZINSLIDER := TRUE;
+            END_IF;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF MAG_CRANEONMAGAZIN THEN
+                MAG_2TRANSIT := TRUE;
+                MAG_2STATE := MAGAZIN_STATES_T#STEP0;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+            END_CASE;
+    CASE CRANE_2STATE OF 
+        CRANE_STATES_T#CRANE_INIT:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANELOWER := TRUE;
+            CRANE_INTERCONNECTCRANESTARTCOMMAND := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEDOWN THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_INIT_2;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_INIT_2:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANELOWER := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEUP THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#INTERSTEP;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_LIFT_CONVEYOR:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANELOWER := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#INTERSTEP;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_ON_CONVEYOR:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANETURNCOUNTERCLOCKWISE := FALSE;
+            CRANE_CRANETURNCLOCKWISE := FALSE;
+            CRANE_CRANELOWER := TRUE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEDOWN THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#RELEASE;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_ON_CONVEYOR_METALLIC:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANETURNCOUNTERCLOCKWISE := FALSE;
+            CRANE_CRANETURNCLOCKWISE := FALSE;
+            CRANE_CRANELOWER := TRUE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEDOWN THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#RELEASE;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_STOP:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#START_CRANE;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_TURN_LEFT_METALLIC:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANETURNCOUNTERCLOCKWISE := TRUE;
+            CRANE_CRANETURNCLOCKWISE := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEONCONVEYOR THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_ON_CONVEYOR_METALLIC;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#CRANE_TURN_LEFT_NOT_METALLIC:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANETURNCOUNTERCLOCKWISE := TRUE;
+            CRANE_CRANETURNCLOCKWISE := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEONCONVEYOR THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_ON_CONVEYOR;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#INIT:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#START_CRANE;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#INTERSTEP:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_STARTCOMMANDCRANE := TRUE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_STARTVAR THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#INTERSTEP_2;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#INTERSTEP_2:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_SLIDERMOVEDOUT THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#TIMEDELAY;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#INTERSTEP_CHECK_WORKPIECE:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_WORKPIECEREADY THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#MAGAZIN_STOP;
+            ELSIF NOT CRANE_WORKPIECEREADY THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_STOP;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#MAGAZIN_STOP:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANETURNCLOCKWISE := FALSE;
+            CRANE_CRANETURNCOUNTERCLOCKWISE := FALSE;
+            CRANE_MAGAZINVACUUMON := TRUE;
+            CRANE_MAGAZINVACUUMOFF := FALSE;
+            CRANE_CRANELOWER := TRUE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANESUCKED THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#STEP0;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#START_CRANE:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANELOWER := FALSE;
+            CRANE_MAGAZINVACUUMOFF := TRUE;
+            CRANE_MAGAZINVACUUMON := FALSE;
+            CRANE_CRANETURNCOUNTERCLOCKWISE := FALSE;
+            CRANE_CRANETURNCLOCKWISE := FALSE;
+            CRANE_STARTVAR := FALSE;
+            CRANE_STARTCOMMANDCRANE := FALSE;
+            IF (CRANE_STARTBUTTONMAGAZIN = TRUE) THEN
+                CRANE_INTERCONNECTCRANESTARTCOMMAND := TRUE;
+            END_IF;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_INTERCONNECTCRANESTARTCOMMAND THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_INIT;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#STEP0:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANELOWER := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF (CRANE_CRANEUP AND CRANE_MAGAZINCAPACITIVESENSOR) THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_TURN_LEFT_METALLIC;
+            ELSIF (CRANE_CRANEUP AND NOT CRANE_MAGAZINCAPACITIVESENSOR) THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_TURN_LEFT_NOT_METALLIC;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#TIMEDELAY:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_TIMEDELAY_TIMER_IN := TRUE;
+            CRANE_TIMEDELAY_TIMER_PT := CRANE_TIMEDELAY_TIMER_DURATION;
+            IF CRANE_TIMEDELAY_TIMER_IN THEN
+                CRANE_TIMEDELAY_TIMER_Q := (CRANE_TIMEDELAY_TIMER_ET = UINT#0);
+                IF (CRANE_TIMEDELAY_TIMER_ET > UINT#0) THEN
+                    CRANE_TIMEDELAY_TIMER_ET := (CRANE_TIMEDELAY_TIMER_ET - UINT#1);
+                ELSE
+                    CRANE_TIMEDELAY_TIMER_ET := UINT#0;
+                END_IF;
+            ELSE
+                CRANE_TIMEDELAY_TIMER_Q := FALSE;
+                CRANE_TIMEDELAY_TIMER_ET := CRANE_TIMEDELAY_TIMER_PT;
+            END_IF;
+            CRANE_TIMEDELAY_TIMER_INTERCONNECT := CRANE_TIMEDELAY_TIMER_Q;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_TIMEDELAY_TIMER_INTERCONNECT THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#TURN_RIGHT;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#TURN_RIGHT:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_CRANETURNCLOCKWISE := TRUE;
+            CRANE_CRANETURNCOUNTERCLOCKWISE := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF CRANE_CRANEONMAGAZIN THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#INTERSTEP_CHECK_WORKPIECE;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+        CRANE_STATES_T#RELEASE:
+            (* BEGIN(STATE) *)
+            (* BEGIN(ONENTRY) *)
+            CRANE_2TRANSIT := FALSE;
+            (* END(ONENTRY) *)
+            (* BEGIN(ONACTIVE) *)
+            CRANE_MAGAZINVACUUMOFF := TRUE;
+            CRANE_MAGAZINVACUUMON := FALSE;
+            (* END(ONACTIVE) *)
+            (* BEGIN(TRANSITION) *)
+            IF TRUE THEN
+                CRANE_2TRANSIT := TRUE;
+                CRANE_2STATE := CRANE_STATES_T#CRANE_LIFT_CONVEYOR;
+            END_IF;
+            (* END(TRANSITION) *)
+            (* BEGIN(ONEXIT) *)
+            (* END(ONEXIT) *)
+            (* END(STATE) *)
+        
+            END_CASE;
+    IF ACTUATOR_MAGAZINGREENLAMP THEN
+        IF (CRANE_STARTCOMMANDCRANE AND MAG_STARTCOMMANDMAGAZIN) THEN
+            CRANE_STARTVAR := TRUE;
+            MAG_STARTVAR := TRUE;
+        END_IF;
+    END_IF;
+    CRANE_SFCRESET := FALSE;
+    MAG_SFCRESET := FALSE;
+ELSIF NOT SENSOR_MAGAZINEMERGENCYSTOP THEN
+    ACTUATOR_MAGAZINSLIDER := FALSE;
+    ACTUATOR_CRANELOWER := FALSE;
+    ACTUATOR_MAGAZINVACUUMON := FALSE;
+    ACTUATOR_MAGAZINVACUUMOFF := TRUE;
+    ACTUATOR_MAGAZINGREENLAMP := FALSE;
+    ACTUATOR_CRANETURNCOUNTERCLOCKWISE := FALSE;
+    ACTUATOR_CRANETURNCLOCKWISE := FALSE;
+    CRANE_SFCRESET := TRUE;
+    MAG_SFCRESET := TRUE;
+    CRANE_STARTVAR := FALSE;
+    MAG_STARTVAR := FALSE;
+END_IF;
+END_PROGRAM
+
+CONFIGURATION Config0
+  RESOURCE Res0 ON PLC
+    TASK TASK0(INTERVAL := T#50MS, PRIORITY := 0);
+    PROGRAM INSTANCE0 WITH TASK0 : MAIN;
+  END_RESOURCE
+END_CONFIGURATION

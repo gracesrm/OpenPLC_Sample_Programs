@@ -1,0 +1,37 @@
+PROGRAM MAIN
+VAR S : INT; END_VAR
+VAR_INPUT I : INT; END_VAR
+VAR_OUTPUT O : INT; END_VAR
+
+IF S = 0 AND I >= 2 THEN
+  S := 1;
+  IF I >= 100 THEN
+  O := I + 1;
+  ELSIF I >= 50 THEN
+    O := -7;
+  ELSIF I < 0 THEN
+    O := -11;
+  ELSIF I >= 25 THEN
+    O := -5;
+  ELSE
+    O := -3;
+  END_IF;
+ELSIF NOT (S = 0) AND I > 0 THEN
+  S := 3;
+  O := I - 1 * 2;
+ELSIF I < 10 THEN
+  S := 5;
+  O := I - 1 * 2;
+ELSE
+  S := 0;
+  O := -1*I+O;
+END_IF;
+
+END_PROGRAM
+
+CONFIGURATION Config0
+  RESOURCE Res0 ON PLC
+    TASK TASK0(INTERVAL := T#50MS, PRIORITY := 0);
+    PROGRAM INSTANCE0 WITH TASK0 : MAIN;
+  END_RESOURCE
+END_CONFIGURATION

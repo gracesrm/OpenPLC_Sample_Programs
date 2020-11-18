@@ -1,0 +1,41 @@
+
+FUNCTION_BLOCK FB
+VAR_INPUT
+	x : INT;
+END_VAR
+VAR_OUTPUT
+	y : INT;
+END_VAR
+	y := x+6;
+END_FUNCTION_BLOCK
+
+PROGRAM PGRM
+VAR_INPUT
+	x : INT;
+END_VAR
+VAR_OUTPUT
+	y : INT;
+END_VAR
+VAR
+	INST_FB : FB;
+END_VAR
+	INST_FB.x := 4;
+	INST_FB();
+	INST_FB.x := INST_FB.y + 2;
+	INST_FB();
+	y := INST_FB.y;
+	IF x > 5 THEN
+		y := 6;
+	ELSIF x > 3 THEN
+		y := 7;
+	ELSE
+		y := x;
+	END_IF;
+	y := y + 4;
+END_PROGRAM
+CONFIGURATION Config0
+  RESOURCE Res0 ON PLC
+    TASK task0(INTERVAL := T#50ms, PRIORITY := 0);
+    PROGRAM instance0 WITH task0 : PGRM;
+  END_RESOURCE
+END_CONFIGURATION

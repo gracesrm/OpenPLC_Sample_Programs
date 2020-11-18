@@ -1,0 +1,18 @@
+PROGRAM OneCnt
+VAR s : INT; END_VAR
+
+VAR_OUTPUT
+    c : INT;
+END_VAR
+
+    s := s + 1;
+    c :=  s;
+
+END_PROGRAM
+
+CONFIGURATION Config0
+  RESOURCE Res0 ON PLC
+    TASK task0(INTERVAL := T#50ms, PRIORITY := 0);
+    PROGRAM instance0 WITH task0 : OneCnt;
+  END_RESOURCE
+END_CONFIGURATION
